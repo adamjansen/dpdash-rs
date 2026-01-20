@@ -1,0 +1,23 @@
+[package]
+description = "Data Panel dashboard"
+edition.workspace = true
+name = "dpdash"
+version = "1.0.0"
+publish.workspace = true
+authors = ["Data Panel"]
+default-run = "dpdash"
+
+[[bin]]
+name = "dpdash"
+path = "src/main.rs"
+
+[dependencies]
+clap = { version = "4.5.54", features = ["derive"] }
+egui.workspace = true
+eframe.workspace = true
+egui-desktop.workspace = true
+egui_extras = { version = "0.33.3", features = ["gif", "svg", "svg_text", "syntect", "serde"] }
+env_logger = { version = "0.11.8", features = ["auto-color", "humantime"] }
+serde = { version = "1.0.228", features = ["derive"] }
+
+widgets.workspace = true

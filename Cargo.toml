@@ -1,0 +1,23 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/dpdash",
+    "crates/widgets",
+]
+
+default-members = ["crates/dpdash"]
+
+
+[workspace.package]
+publish = false
+edition = "2024"
+
+[workspace.dependencies]
+
+dpdash = {path = "crates/dpdash"}
+widgets = {path = "crates/widgets"}
+eframe = {version = "0.33.3", default-features=false, features = ["accesskit", "default_fonts", "glow", "persistence", "wayland", "x11"]}
+egui = "0.33.3"
+egui-desktop = "0.2.1"
+
+[workspace.lints.rust]
