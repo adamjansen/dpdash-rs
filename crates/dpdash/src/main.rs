@@ -1,38 +1,39 @@
-use egui_extras::install_image_loaders;
+use gpui::{prelude::*, *};
+use gpui_component::{
+    ActiveTheme as _, Icon, IconName, h_flex,
+    input::{Input, InputEvent, InputState},
+    resizable::{h_resizable, resizable_panel},
+    sidebar::{Sidebar, SidebarGroup, SidebarHeader, SidebarMenu, SidebarMenuItem},
+    v_flex,
+};
+use gpui_component_assets::Assets;
 
-use clap::Parser;
+use dpdash::workspace;
 
-use eframe::egui;
+pub struct DpDashApp {}
 
-#[derive(Parser, Debug)]
-#[command(name = "dpdash", disable_version_flag = true, max_term_width = 100)]
-struct Args {
-    // Set custom directory for all user data.
-    // Overrides default platform-specific data directory location.
-    // macOS: `~/Library/Application Support/DPDash`
-    // Linux: `$XDG_DATA_HOME/DPDash`
-    // Windows: `%LOCALAPPDATA%\DPDash`
-    #[arg(long, value_name = "DIR", verbatim_doc_comment)]
-    user_data_dir: Option<String>,
+impl DpDashApp {
+    pub fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
+        Self {}
+    }
+
+    fn view(window: &mut Window, cx: &mut App) -> Entity<Self> {
+        cx.new(|cx| Self::new(window, cx))
+    }
 }
 
-fn main() -> Result<(), eframe::Error> {
-    env_logger::init();
+impl Render for DpDashApp {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        div()
+    }
+}
 
-    let options = eframe::NativeOptions {
-        viewport: egui::ViewportBuilder::default()
-            .with_inner_size([800.0, 600.0])
-            .with_min_inner_size([640.0, 480.0])
-            .with_decorations(false),
-        ..Default::default()
-    };
+fn main() {
+    let app = Application::new().with_assets(Assets);
 
-    eframe::run_native(
-        "DPDash",
-        options,
-        Box::new(|cc| {
-            install_image_loaders(&cc.egui_ctx);
-            Ok(Box::new(dpdash::DpDashApp::default()))
-        }),
-    )
+    app.run(move |cx| {
+        dpdash::init(cx);
+
+        workspace::open_new(cx, |_, _, _| {}).detach();
+    });
 }

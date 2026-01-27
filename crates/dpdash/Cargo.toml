@@ -12,12 +12,14 @@ name = "dpdash"
 path = "src/main.rs"
 
 [dependencies]
-clap = { version = "4.5.54", features = ["derive"] }
-egui.workspace = true
-eframe.workspace = true
-egui-desktop.workspace = true
-egui_extras = { version = "0.33.3", features = ["gif", "svg", "svg_text", "syntect", "serde"] }
-env_logger = { version = "0.11.8", features = ["auto-color", "humantime"] }
-serde = { version = "1.0.228", features = ["derive"] }
+anyhow.workspace = true
+gpui.workspace = true
+gpui-component.workspace = true
+gpui-component-assets.workspace = true
 
-widgets.workspace = true
+regex = "1"
+rust-i18n.workspace = true
+serde = "1"
+serde_json="1"
+tracing.workspace = true
+tracing-subscriber = {version = "0.3.22", features = ["env-filter"]}

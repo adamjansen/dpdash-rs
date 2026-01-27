@@ -1,0 +1,13 @@
+[files]
+ignore-files = true
+ignore-hidden = false
+extend-exclude = [
+    ".git/",
+]
+
+[default]
+extend-ignore-re = [
+    # PNG is a file format
+    "PNG",
+]
+check-filename = true
