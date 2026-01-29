@@ -1,48 +1,39 @@
 use anyhow::{Context as _, Result};
-
 use gpui::*;
 use gpui_component::{
     IconName, Root, Sizable,
     button::{Button, ButtonVariants as _},
-    dock::{ClosePanel, DockArea, DockAreaState, DockEvent, DockItem, DockPlacement, ToggleZoom},
+    dock::{DockArea, DockAreaState, DockEvent, DockItem, DockPlacement},
     menu::DropdownMenu,
 };
 
-use crate::{AppState, Open, title_bar::AppTitleBar};
+use crate::tools::ConsoleTool;
+use crate::tools::DeviceManagerTool;
+use crate::tools::ExampleTool;
+use crate::{AppState, AppTitleBar, ToolContainer};
 
 use serde::Deserialize;
 use std::{sync::Arc, time::Duration};
 
 #[derive(Action, Clone, PartialEq, Eq, Deserialize)]
-#[action(namespace = workspace, no_json)]
+#[action(namespace = story, no_json)]
 pub struct AddPanel(DockPlacement);
 
 #[derive(Action, Clone, PartialEq, Eq, Deserialize)]
-#[action(namespace = workspace, no_json)]
+#[action(namespace = story, no_json)]
 pub struct TogglePanelVisible(SharedString);
 
-actions!(workspace, [ToggleDockToggleButton]);
+actions!(story, [ToggleDockToggleButton]);
 
 const MAIN_DOCK_AREA: DockAreaTab = DockAreaTab {
     id: "main-dock",
-    version: 1,
+    version: 5,
 };
 
 #[cfg(debug_assertions)]
 const STATE_FILE: &str = "target/docks.json";
 #[cfg(not(debug_assertions))]
 const STATE_FILE: &str = "docks.json";
-
-pub fn init(cx: &mut App) {
-    cx.on_action(|_action: &Open, _cx: &mut App| {});
-
-    cx.bind_keys(vec![
-        KeyBinding::new("shift-escape", ToggleZoom, None),
-        KeyBinding::new("ctrl-w", ClosePanel, None),
-    ]);
-
-    cx.activate(true);
-}
 
 pub struct Workspace {
     title_bar: Entity<AppTitleBar>,
@@ -65,10 +56,10 @@ impl Workspace {
 
         match Self::load_layout(dock_area.clone(), window, cx) {
             Ok(_) => {
-                println!("Load layout OK");
+                println!("load layout success");
             }
             Err(err) => {
-                eprintln!("Load layout failed: {:?}", err);
+                eprintln!("load layout error: {:?}", err);
                 Self::reset_default_layout(weak_dock_area, window, cx);
             }
         };
@@ -88,6 +79,7 @@ impl Workspace {
             move |_, cx| {
                 let state = dock_area.read(cx).dump(cx);
                 cx.background_executor().spawn(async move {
+                    // Save layout before quitting
                     Self::save_state(&state).unwrap();
                 })
             }
@@ -198,7 +190,7 @@ impl Workspace {
     }
 
     fn save_state(state: &DockAreaState) -> Result<()> {
-        println!("Saving layout");
+        println!("Save layout...");
         let json = serde_json::to_string_pretty(state)?;
         std::fs::write(STATE_FILE, json)?;
         Ok(())
@@ -212,11 +204,13 @@ impl Workspace {
         let json = std::fs::read_to_string(STATE_FILE)?;
         let state = serde_json::from_str::<DockAreaState>(&json)?;
 
+        // Check if the saved layout version is different from the current version
+        // Notify the user and ask if they want to reset the layout to default.
         if state.version != Some(MAIN_DOCK_AREA.version) {
             let answer = window.prompt(
                 PromptLevel::Info,
-                "The default main layout has been changed.\n\
-            Do you want to reset the layout to default?",
+                "The default main layout has been updated.\n\
+                Do you want to reset the layout to default?",
                 None,
                 &["Yes", "No"],
                 cx,
@@ -253,23 +247,56 @@ impl Workspace {
     fn reset_default_layout(dock_area: WeakEntity<DockArea>, window: &mut Window, cx: &mut App) {
         let dock_item = Self::init_default_layout(&dock_area, window, cx);
 
-        let left_panels = DockItem::v_split(vec![], &dock_area, window, cx);
-
-        let bottom_panels = DockItem::v_split(
-            vec![DockItem::tabs(vec![], &dock_area, window, cx)],
+        let left_panels = DockItem::v_split(
+            vec![DockItem::tab(
+                ToolContainer::panel::<ExampleTool>(window, cx),
+                &dock_area,
+                window,
+                cx,
+            )],
             &dock_area,
             window,
             cx,
         );
 
-        let right_panels = DockItem::v_split(vec![], &dock_area, window, cx);
+        let bottom_panels = DockItem::v_split(
+            vec![DockItem::tabs(
+                vec![Arc::new(ToolContainer::panel::<ConsoleTool>(window, cx))],
+                &dock_area,
+                window,
+                cx,
+            )],
+            &dock_area,
+            window,
+            cx,
+        );
+
+        let right_panels = DockItem::v_split(
+            vec![
+                DockItem::tab(
+                    ToolContainer::panel::<ExampleTool>(window, cx),
+                    &dock_area,
+                    window,
+                    cx,
+                ),
+                DockItem::tab(
+                    ToolContainer::panel::<DeviceManagerTool>(window, cx),
+                    &dock_area,
+                    window,
+                    cx,
+                ),
+            ],
+            &dock_area,
+            window,
+            cx,
+        );
 
         _ = dock_area.update(cx, |view, cx| {
             view.set_version(MAIN_DOCK_AREA.version, window, cx);
             view.set_center(dock_item, window, cx);
             view.set_left_dock(left_panels, Some(px(350.)), true, window, cx);
             view.set_bottom_dock(bottom_panels, Some(px(200.)), true, window, cx);
-            view.set_right_dock(right_panels, Some(px(330.)), true, window, cx);
+            view.set_right_dock(right_panels, Some(px(320.)), true, window, cx);
 
             Self::save_state(&view.dump(cx)).unwrap();
         });
@@ -281,7 +308,12 @@ impl Workspace {
         cx: &mut App,
     ) -> DockItem {
         DockItem::v_split(
-            vec![DockItem::tabs(vec![], &dock_area, window, cx)],
+            vec![DockItem::tabs(
+                vec![Arc::new(ToolContainer::panel::<ExampleTool>(window, cx))],
+                &dock_area,
+                window,
+                cx,
+            )],
             &dock_area,
             window,
             cx,
@@ -289,7 +321,7 @@ impl Workspace {
     }
 
     pub fn new_local(cx: &mut App) -> Task<anyhow::Result<WindowHandle<Root>>> {
-        let mut window_size = size(px(1600.), px(1200.0));
+        let mut window_size = size(px(1600.0), px(1200.0));
         if let Some(display) = cx.primary_display() {
             let display_size = display.bounds().size;
             window_size.width = window_size.width.min(display_size.width * 0.85);
@@ -297,6 +329,7 @@ impl Workspace {
         }
 
         let window_bounds = Bounds::centered(None, window_size, cx);
+
         cx.spawn(async move |cx| {
             let options = WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(window_bounds)),
@@ -341,10 +374,11 @@ impl Workspace {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
+        let panel = Arc::new(ToolContainer::panel::<ExampleTool>(window, cx));
 
-        // Create a panel
-        // let panel = Arc::new(ToolContainer::panel::<SomeTool>(window, cx));
-        // self.dock_area.update(cvx, |dock_area, cx| { dock_area.add_panel(panel, action.0, None, window, cx);});
+        self.dock_area.update(cx, |dock_area, cx| {
+            dock_area.add_panel(panel, action.0, None, window, cx);
+        });
     }
 
     fn on_action_toggle_panel_visible(
@@ -379,6 +413,7 @@ impl Workspace {
         });
     }
 }
+
 pub fn open_new(
     cx: &mut App,
     init: impl FnOnce(&mut Root, &mut Window, &mut Context<Root>) + 'static + Send,
@@ -395,8 +430,12 @@ pub fn open_new(
 
 impl Render for Workspace {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let sheet_layer = Root::render_sheet_layer(window, cx);
+        let dialog_layer = Root::render_dialog_layer(window, cx);
+        let notification_layer = Root::render_notification_layer(window, cx);
+
         div()
-            .id("workspace")
+            .id("story-workspace")
             .on_action(cx.listener(Self::on_action_add_panel))
             .on_action(cx.listener(Self::on_action_toggle_panel_visible))
             .on_action(cx.listener(Self::on_action_toggle_dock_toggle_button))
@@ -406,5 +445,8 @@ impl Render for Workspace {
             .flex_col()
             .child(self.title_bar.clone())
             .child(self.dock_area.clone())
+            .children(sheet_layer)
+            .children(dialog_layer)
+            .children(notification_layer)
     }
 }

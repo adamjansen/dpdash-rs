@@ -1,17 +1,14 @@
 use std::rc::Rc;
 
 use gpui::{
-    AnyElement, App, AppContext, Context, Corner, Entity, FocusHandle, InteractiveElement as _,
-    IntoElement, MouseButton, ParentElement as _, Render, SharedString, Styled as _, Subscription,
-    Window, div, px,
+    AnyElement, App, Context, Entity, InteractiveElement as _, IntoElement, MouseButton,
+    ParentElement as _, Render, SharedString, Styled as _, Subscription, Window, div,
 };
 use gpui_component::{
-    ActiveTheme as _, IconName, PixelsExt, Side, Sizable as _, Theme, TitleBar, WindowExt as _,
-    badge::Badge,
+    ActiveTheme as _, IconName, Sizable as _, TitleBar,
     button::{Button, ButtonVariants as _},
     label::Label,
-    menu::{AppMenuBar, DropdownMenu as _},
-    scroll::ScrollbarShow,
+    menu::AppMenuBar,
 };
 
 use crate::app_menus;
@@ -25,7 +22,7 @@ pub struct AppTitleBar {
 impl AppTitleBar {
     pub fn new(
         title: impl Into<SharedString>,
-        window: &mut Window,
+        _window: &mut Window,
         cx: &mut Context<Self>,
     ) -> Self {
         let app_menu_bar = app_menus::init(title, cx);
@@ -49,10 +46,7 @@ impl AppTitleBar {
 
 impl Render for AppTitleBar {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let notifications_count = window.notifications(cx).len();
-
         TitleBar::new()
-            // left side
             .child(div().flex().items_center().child(self.app_menu_bar.clone()))
             .child(
                 div()
@@ -74,19 +68,8 @@ impl Render for AppTitleBar {
                             .small()
                             .ghost()
                             .on_click(|_, _, cx| {
-                                cx.open_url("https://github.com/longbridge/gpui-component")
+                                cx.open_url("https://github.com/datapanelcorp/dpdash")
                             }),
-                    )
-                    .child(
-                        div().relative().child(
-                            Badge::new().count(notifications_count).max(99).child(
-                                Button::new("bell")
-                                    .small()
-                                    .ghost()
-                                    .compact()
-                                    .icon(IconName::Bell),
-                            ),
-                        ),
                     ),
             )
     }
