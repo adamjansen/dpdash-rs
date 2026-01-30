@@ -57,20 +57,7 @@ impl Render for AppTitleBar {
                     .gap_2()
                     .on_mouse_down(MouseButton::Left, |_, _, cx| cx.stop_propagation())
                     .child((self.child.clone())(window, cx))
-                    .child(
-                        Label::new("theme:")
-                            .secondary(cx.theme().theme_name())
-                            .text_sm(),
-                    )
-                    .child(
-                        Button::new("github")
-                            .icon(IconName::GitHub)
-                            .small()
-                            .ghost()
-                            .on_click(|_, _, cx| {
-                                cx.open_url("https://github.com/datapanelcorp/dpdash")
-                            }),
-                    ),
+                    .child(Label::new(env!("CARGO_PKG_VERSION")).text_sm()),
             )
     }
 }

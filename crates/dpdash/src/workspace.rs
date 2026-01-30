@@ -10,7 +10,7 @@ use gpui_component::{
 use crate::tools::ConsoleTool;
 use crate::tools::DeviceManagerTool;
 use crate::tools::ExampleTool;
-use crate::{AppState, AppTitleBar, ToolContainer};
+use crate::{AppState, AppTitleBar, StatusBar, ToolContainer};
 
 use serde::Deserialize;
 use std::{sync::Arc, time::Duration};
@@ -38,6 +38,7 @@ const STATE_FILE: &str = "docks.json";
 pub struct Workspace {
     title_bar: Entity<AppTitleBar>,
     dock_area: Entity<DockArea>,
+    status_bar: Entity<StatusBar>,
     last_layout_state: Option<DockAreaState>,
     toggle_button_visible: bool,
     _save_layout_task: Option<Task<()>>,
@@ -56,10 +57,10 @@ impl Workspace {
 
         match Self::load_layout(dock_area.clone(), window, cx) {
             Ok(_) => {
-                println!("load layout success");
+                tracing::info!("Load layout success");
             }
             Err(err) => {
-                eprintln!("load layout error: {:?}", err);
+                tracing::error!("Load layout error: {:?}", err);
                 Self::reset_default_layout(weak_dock_area, window, cx);
             }
         };
@@ -85,6 +86,8 @@ impl Workspace {
             }
         })
         .detach();
+
+        let status_bar = cx.new(|cx| StatusBar::new(window, cx));
 
         let title_bar = cx.new(|cx| {
             AppTitleBar::new("DPDash", window, cx).child({
@@ -155,6 +158,7 @@ impl Workspace {
         Self {
             dock_area,
             title_bar,
+            status_bar,
             last_layout_state: None,
             toggle_button_visible: true,
             _save_layout_task: None,
@@ -190,7 +194,7 @@ impl Workspace {
     }
 
     fn save_state(state: &DockAreaState) -> Result<()> {
-        println!("Save layout...");
+        tracing::info!("Save layout");
         let json = serde_json::to_string_pretty(state)?;
         std::fs::write(STATE_FILE, json)?;
         Ok(())
@@ -445,6 +449,7 @@ impl Render for Workspace {
             .flex_col()
             .child(self.title_bar.clone())
             .child(self.dock_area.clone())
+            .child(self.status_bar.clone())
             .children(sheet_layer)
             .children(dialog_layer)
             .children(notification_layer)

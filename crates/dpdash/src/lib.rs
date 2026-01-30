@@ -16,10 +16,13 @@ use serde::{Deserialize, Serialize};
 use tracing_subscriber::{layer::SubscriberExt as _, util::SubscriberInitExt as _};
 
 mod app_menus;
+mod icons;
+mod status_bar;
 mod themes;
 mod title_bar;
 mod tools;
 pub mod workspace;
+pub use crate::status_bar::StatusBar;
 pub use crate::title_bar::AppTitleBar;
 
 pub use tools::*;
@@ -159,7 +162,7 @@ pub fn init(cx: &mut App) {
                                     .confirm()
                                     .child("DPDash")
                                     .child(env!("CARGO_PKG_VERSION"))
-                                    .child(option_env!("DPDASH_COMMIT_SHA").unwrap_or("nope"))
+                                    .child(option_env!("DPDASH_COMMIT_SHA").unwrap_or(""))
                                     .child("© 2026 Data Panel Corporation")
                                     .alert()
                             },

@@ -1438,8 +1438,8 @@ dependencies = [
  "core-text",
  "gpui",
  "gpui-component",
- "gpui-component-assets",
  "regex",
+ "rust-embed",
  "rust-i18n",
  "serde",
  "serde_json",
@@ -2309,16 +2309,6 @@ dependencies = [
  "unicode-segmentation",
  "uuid",
  "zed-sum-tree",
-]
-
-[[package]]
-name = "gpui-component-assets"
-version = "0.5.0"
-source = "git+https://github.com/longbridge/gpui-component#3522e0deed47573156ed026f90abb26e1ef36929"
-dependencies = [
- "anyhow",
- "gpui",
- "rust-embed",
 ]
 
 [[package]]

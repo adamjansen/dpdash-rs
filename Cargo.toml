@@ -17,7 +17,7 @@ dpdash = {path = "crates/dpdash"}
 gpui = { git = "https://github.com/zed-industries/zed"}
 gpui-macros = { git = "https://github.com/zed-industries/zed"}
 gpui-component = { git = "https://github.com/longbridge/gpui-component"}
-gpui-component-assets = { git = "https://github.com/longbridge/gpui-component"}
+rust-embed = {version = "8", features = ["interpolate-folder-path"]}
 
 anyhow = "1"
 log = "0.4"
