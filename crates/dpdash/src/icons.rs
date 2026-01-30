@@ -1,6 +1,7 @@
-use gpui::{AnyElement, App, IntoElement, RenderOnce, SharedString, Window};
+use gpui::{App, IntoElement, RenderOnce, SharedString, Window};
 use gpui_component::{Icon, IconNamed};
 
+#[allow(dead_code)]
 #[derive(IntoElement, Clone)]
 pub enum DpIconName {
     Binary,

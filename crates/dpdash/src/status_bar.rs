@@ -1,17 +1,23 @@
 use std::rc::Rc;
 
-use gpui::*;
-use gpui_component::{ActiveTheme, IconName, button::*, divider::Divider, label::Label, tag::Tag};
+use gpui::{
+    AnyElement, App, Context, IntoElement, ParentElement, Render, Styled, Subscription, Window,
+    div, px, rems,
+};
+
+use gpui_component::{ActiveTheme, IconName, divider::Divider};
 
 use crate::icons::DpIconName;
 
+type ChildFunc = Rc<dyn Fn(&mut Window, &mut App) -> AnyElement>;
+
 pub struct StatusBar {
-    child: Rc<dyn Fn(&mut Window, &mut App) -> AnyElement>,
+    child: ChildFunc,
     _subscriptions: Vec<Subscription>,
 }
 
 impl StatusBar {
-    pub fn new(_window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(_window: &mut Window, _cx: &mut Context<Self>) -> Self {
         Self {
             child: Rc::new(|_, _| div().into_any_element()),
             _subscriptions: vec![],
@@ -29,34 +35,52 @@ impl StatusBar {
 }
 
 impl Render for StatusBar {
-    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, _window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        let theme = cx.theme();
         div()
             .flex()
-            .px_4()
-            .py_1()
-            .bg(cx.theme().muted)
+            .flex_row()
+            .flex_shrink_0()
+            .h(rems(1.8))
             .w_full()
-            .items_start()
-            .gap_2()
+            .bg(theme.sidebar)
+            .border_t(px(1.0))
+            .border_color(theme.border)
+            .items_center()
+            .justify_between()
             .child(
                 div()
                     .flex()
-                    .gap_4()
-                    .h_full()
-                    .items_start()
-                    .child(IconName::Network)
-                    .child(IconName::BatteryCharging),
+                    .flex_row()
+                    .items_center()
+                    .gap(rems(0.8))
+                    .child(
+                        div()
+                            .px(rems(0.4))
+                            .py(rems(0.1))
+                            .rounded(theme.radius)
+                            .text_xs()
+                            .text_color(theme.accent_foreground)
+                            .child(IconName::Network),
+                    )
+                    .child(Divider::vertical()),
             )
-            .child(Divider::vertical().color(cx.theme().accent))
-            .child(div().w_full())
-            .child(Divider::vertical().color(cx.theme().accent))
             .child(
                 div()
                     .flex()
-                    .gap_4()
-                    .h_full()
-                    .items_start()
-                    .child(DpIconName::Bug),
+                    .flex_row()
+                    .items_center()
+                    .gap(rems(0.8))
+                    .child(Divider::vertical())
+                    .child(
+                        div()
+                            .px(rems(0.4))
+                            .py(rems(0.1))
+                            .rounded(theme.radius)
+                            .text_xs()
+                            .text_color(theme.accent_foreground)
+                            .child(DpIconName::Bug),
+                    ),
             )
     }
 }

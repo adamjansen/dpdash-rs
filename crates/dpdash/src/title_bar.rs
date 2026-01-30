@@ -4,18 +4,15 @@ use gpui::{
     AnyElement, App, Context, Entity, InteractiveElement as _, IntoElement, MouseButton,
     ParentElement as _, Render, SharedString, Styled as _, Subscription, Window, div,
 };
-use gpui_component::{
-    ActiveTheme as _, IconName, Sizable as _, TitleBar,
-    button::{Button, ButtonVariants as _},
-    label::Label,
-    menu::AppMenuBar,
-};
+use gpui_component::{TitleBar, label::Label, menu::AppMenuBar};
 
 use crate::app_menus;
 
+type ChildFunc = Rc<dyn Fn(&mut Window, &mut App) -> AnyElement>;
+
 pub struct AppTitleBar {
     app_menu_bar: Entity<AppMenuBar>,
-    child: Rc<dyn Fn(&mut Window, &mut App) -> AnyElement>,
+    child: ChildFunc,
     _subscriptions: Vec<Subscription>,
 }
 

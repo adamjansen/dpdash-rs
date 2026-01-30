@@ -3,11 +3,15 @@ use gpui_component::dock::PanelControl;
 
 mod console_tool;
 mod device_manager_tool;
+mod dpload_tool;
 mod example_tool;
+mod property_editor;
 
 pub use console_tool::ConsoleTool;
 pub use device_manager_tool::DeviceManagerTool;
+pub use dpload_tool::DpLoadTool;
 pub use example_tool::ExampleTool;
+pub use property_editor::PropertyEditorTool;
 
 pub(crate) fn init(_cx: &mut App) {
     // If any tools require explicit initialization, do it here
@@ -52,7 +56,7 @@ pub trait Tool: Render + Sized {
     where
         Self: 'static,
     {
-        if let Some(tool) = view.downcast::<Self>().ok() {
+        if let Ok(tool) = view.downcast::<Self>() {
             cx.update_entity(&tool, |tool, cx| {
                 tool.on_active(active, window, cx);
             });

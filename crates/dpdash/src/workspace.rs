@@ -7,9 +7,8 @@ use gpui_component::{
     menu::DropdownMenu,
 };
 
-use crate::tools::ConsoleTool;
-use crate::tools::DeviceManagerTool;
-use crate::tools::ExampleTool;
+use crate::tools::{ConsoleTool, DeviceManagerTool, DpLoadTool, ExampleTool, PropertyEditorTool};
+
 use crate::{AppState, AppTitleBar, StatusBar, ToolContainer};
 
 use serde::Deserialize;
@@ -68,9 +67,10 @@ impl Workspace {
         cx.subscribe_in(
             &dock_area,
             window,
-            |this, dock_area, ev: &DockEvent, window, cx| match ev {
-                DockEvent::LayoutChanged => this.save_layout(dock_area, window, cx),
-                _ => {}
+            |this, dock_area, ev: &DockEvent, window, cx| {
+                if let DockEvent::LayoutChanged = ev {
+                    this.save_layout(dock_area, window, cx)
+                }
             },
         )
         .detach();
@@ -278,7 +278,7 @@ impl Workspace {
         let right_panels = DockItem::v_split(
             vec![
                 DockItem::tab(
-                    ToolContainer::panel::<ExampleTool>(window, cx),
+                    ToolContainer::panel::<PropertyEditorTool>(window, cx),
                     &dock_area,
                     window,
                     cx,
@@ -311,14 +311,9 @@ impl Workspace {
         window: &mut Window,
         cx: &mut App,
     ) -> DockItem {
-        DockItem::v_split(
-            vec![DockItem::tabs(
-                vec![Arc::new(ToolContainer::panel::<ExampleTool>(window, cx))],
-                &dock_area,
-                window,
-                cx,
-            )],
-            &dock_area,
+        DockItem::tabs(
+            vec![Arc::new(ToolContainer::panel::<DpLoadTool>(window, cx))],
+            dock_area,
             window,
             cx,
         )
@@ -425,7 +420,7 @@ pub fn open_new(
     let task: Task<std::result::Result<WindowHandle<Root>, anyhow::Error>> =
         Workspace::new_local(cx);
     cx.spawn(async move |cx| {
-        if let Some(root) = task.await.ok() {
+        if let Ok(root) = task.await {
             root.update(cx, |workspace, window, cx| init(workspace, window, cx))
                 .expect("failed to init workspace");
         }

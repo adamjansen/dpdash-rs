@@ -259,7 +259,7 @@ impl ToolContainer {
         let tool = T::new_view(window, cx);
         let tool_klass = T::klass();
 
-        let view = cx.new(|cx| {
+        cx.new(|cx| {
             let mut tool = Self::new(window, cx)
                 .tool(tool.into(), tool_klass)
                 .on_active(T::on_active_any);
@@ -271,9 +271,7 @@ impl ToolContainer {
             tool.title_bg = T::title_bg();
             tool.paddings = T::paddings();
             tool
-        });
-
-        view
+        })
     }
 
     pub fn width(mut self, width: gpui::Pixels) -> Self {
@@ -302,6 +300,7 @@ impl ToolContainer {
 pub struct ToolState {
     pub tool_klass: SharedString,
 }
+type ToolConversionFunc = fn(AnyView, bool, &mut Window, &mut App);
 
 impl ToolState {
     fn to_value(&self) -> serde_json::Value {
@@ -324,7 +323,7 @@ impl ToolState {
         bool,
         Option<PanelControl>,
         AnyView,
-        fn(AnyView, bool, &mut Window, &mut App),
+        ToolConversionFunc,
     ) {
         macro_rules! tool {
             ($klass:tt) => {
@@ -343,6 +342,8 @@ impl ToolState {
             "ExampleTool" => tool!(ExampleTool),
             "DeviceManagerTool" => tool!(DeviceManagerTool),
             "ConsoleTool" => tool!(ConsoleTool),
+            "PropertyEditorTool" => tool!(PropertyEditorTool),
+            "DpLoadTool" => tool!(DpLoadTool),
             _ => {
                 unreachable!("Invalid tool klass: {}", self.tool_klass)
             }
@@ -360,14 +361,10 @@ impl Panel for ToolContainer {
     }
 
     fn title_style(&self, cx: &App) -> Option<TitleStyle> {
-        if let Some(bg) = self.title_bg {
-            Some(TitleStyle {
-                background: bg,
-                foreground: cx.theme().foreground,
-            })
-        } else {
-            None
-        }
+        self.title_bg.map(|bg| TitleStyle {
+            background: bg,
+            foreground: cx.theme().foreground,
+        })
     }
 
     fn closable(&self, _cx: &App) -> bool {
@@ -391,10 +388,10 @@ impl Panel for ToolContainer {
 
     fn set_active(&mut self, active: bool, _window: &mut Window, cx: &mut Context<Self>) {
         println!("panel: {} active: {}", self.name, active);
-        if let Some(on_active) = self.on_active {
-            if let Some(tool) = self.tool.clone() {
-                on_active(tool, active, _window, cx);
-            }
+        if let Some(on_active) = self.on_active
+            && let Some(tool) = self.tool.clone()
+        {
+            on_active(tool, active, _window, cx);
         }
     }
 
